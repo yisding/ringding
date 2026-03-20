@@ -6,18 +6,44 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "@ulixee/chrome-139-0",
+      "@ulixee/unblocked-agent-mitm-socket"
+    ]
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@ulixee/hero-playground": "2.0.0-alpha.34",
+    "better-sqlite3": "^12.8.0",
+    "camoufox-js": "^0.9.3",
+    "drizzle-orm": "^0.45.1",
     "next": "16.2.0",
+    "node-cron": "^4.2.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "rebrowser-playwright": "^1.52.0",
+    "resend": "^6.9.4",
+    "turndown": "^7.2.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/turndown": "^5.0.6",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.0",
     "tailwindcss": "^4",
