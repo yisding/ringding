@@ -3,13 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { scrapeJobs } from "@/db/schema";
 import { updateJob, deleteJob } from "@/app/_actions/job-actions";
-
-const FREQUENCY_OPTIONS = [
-  { label: "Every hour", value: "0 * * * *" },
-  { label: "Every 6 hours", value: "0 */6 * * *" },
-  { label: "Every 12 hours", value: "0 */12 * * *" },
-  { label: "Daily", value: "0 9 * * *" },
-];
+import { FREQUENCY_OPTIONS } from "@/lib/validation";
 
 export default async function EditJobPage({
   params,
@@ -35,7 +29,7 @@ export default async function EditJobPage({
       <form action={updateAction} className="space-y-4">
         <div>
           <label htmlFor="url" className="mb-1 block text-sm font-medium">
-            StubHub URL
+            URL
           </label>
           <input
             type="url"

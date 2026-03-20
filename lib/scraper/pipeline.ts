@@ -60,11 +60,15 @@ export async function runScrape(jobId: number): Promise<ScrapeResult> {
 
     return { success: true, jobId, priceCount: prices.length };
   } catch (error) {
-    // Mark job as error
-    await db
-      .update(scrapeJobs)
-      .set({ status: "error", updatedAt: new Date() })
-      .where(eq(scrapeJobs.id, jobId));
+    // Mark job as error — wrap in try-catch so we don't swallow the original error
+    try {
+      await db
+        .update(scrapeJobs)
+        .set({ status: "error", updatedAt: new Date() })
+        .where(eq(scrapeJobs.id, jobId));
+    } catch (dbError) {
+      console.error("[pipeline] Failed to update job status:", dbError);
+    }
 
     const message = error instanceof Error ? error.message : String(error);
     return { success: false, jobId, priceCount: 0, error: message };

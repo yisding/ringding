@@ -1,4 +1,4 @@
-import { eq, and, gte } from "drizzle-orm";
+import { eq, and, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { alertRules, alertHistory, priceRecords } from "@/db/schema";
 import { sendAlertEmail } from "./emailer";
@@ -23,6 +23,7 @@ export async function checkAlerts(
   for (const rule of rules) {
     let triggered = false;
     let message = "";
+    let trailingAvg: number | undefined;
 
     switch (rule.type) {
       case "cheapest_above":
@@ -40,22 +41,23 @@ export async function checkAlerts(
         break;
 
       case "avg_deviation": {
-        // Get trailing 30-day average
         const thirtyDaysAgo = new Date(
           Date.now() - 30 * 24 * 60 * 60 * 1000
         );
-        const historicalPrices = await db.query.priceRecords.findMany({
-          where: and(
-            eq(priceRecords.jobId, jobId),
-            gte(priceRecords.scrapedAt, thirtyDaysAgo)
-          ),
-        });
 
-        if (historicalPrices.length === 0) break;
+        const result = await db
+          .select({ avg: sql<number>`avg(price)` })
+          .from(priceRecords)
+          .where(
+            and(
+              eq(priceRecords.jobId, jobId),
+              gte(priceRecords.scrapedAt, thirtyDaysAgo)
+            )
+          );
 
-        const trailingAvg =
-          historicalPrices.reduce((sum, p) => sum + p.price, 0) /
-          historicalPrices.length;
+        trailingAvg = result[0]?.avg;
+        if (trailingAvg == null) break;
+
         const deviationPct =
           Math.abs((avg - trailingAvg) / trailingAvg) * 100;
 
@@ -63,17 +65,6 @@ export async function checkAlerts(
           triggered = true;
           const direction = avg > trailingAvg ? "higher" : "lower";
           message = `Average price ($${avg.toFixed(2)}) is ${deviationPct.toFixed(1)}% ${direction} than the 30-day average ($${trailingAvg.toFixed(2)})`;
-
-          await db.insert(alertHistory).values({
-            alertId: rule.id,
-            message,
-            cheapestPrice: cheapest,
-            avgPrice: avg,
-            trailingAvg,
-          });
-
-          await sendAlertEmail(rule.email, message, jobId);
-          continue; // Skip the generic insert below
         }
         break;
       }
@@ -85,6 +76,7 @@ export async function checkAlerts(
         message,
         cheapestPrice: cheapest,
         avgPrice: avg,
+        trailingAvg: trailingAvg ?? null,
       });
 
       await sendAlertEmail(rule.email, message, jobId);

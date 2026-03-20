@@ -11,20 +11,22 @@ import {
   updateSchedule,
 } from "@/lib/scheduler/cron-manager";
 import { runScrape } from "@/lib/scraper/pipeline";
+import { createJobSchema, updateJobSchema } from "@/lib/validation";
 
 export async function createJob(formData: FormData) {
-  const url = formData.get("url") as string;
-  const eventName = (formData.get("eventName") as string) || null;
-  const cronExpression =
-    (formData.get("cronExpression") as string) || "0 */6 * * *";
-
-  if (!url) {
-    throw new Error("URL is required");
-  }
+  const parsed = createJobSchema.parse({
+    url: formData.get("url"),
+    eventName: formData.get("eventName") || undefined,
+    cronExpression: formData.get("cronExpression"),
+  });
 
   const [job] = await db
     .insert(scrapeJobs)
-    .values({ url, eventName, cronExpression })
+    .values({
+      url: parsed.url,
+      eventName: parsed.eventName ?? null,
+      cronExpression: parsed.cronExpression,
+    })
     .returning();
 
   scheduleJob(job.id, job.cronExpression);
@@ -34,25 +36,26 @@ export async function createJob(formData: FormData) {
 }
 
 export async function updateJob(jobId: number, formData: FormData) {
-  const url = formData.get("url") as string;
-  const eventName = (formData.get("eventName") as string) || null;
-  const cronExpression =
-    (formData.get("cronExpression") as string) || "0 */6 * * *";
-  const status = (formData.get("status") as string) || "active";
+  const parsed = updateJobSchema.parse({
+    url: formData.get("url"),
+    eventName: formData.get("eventName") || undefined,
+    cronExpression: formData.get("cronExpression"),
+    status: formData.get("status"),
+  });
 
   await db
     .update(scrapeJobs)
     .set({
-      url,
-      eventName,
-      cronExpression,
-      status: status as "active" | "paused" | "error",
+      url: parsed.url,
+      eventName: parsed.eventName ?? null,
+      cronExpression: parsed.cronExpression,
+      status: parsed.status,
       updatedAt: new Date(),
     })
     .where(eq(scrapeJobs.id, jobId));
 
-  if (status === "active") {
-    updateSchedule(jobId, cronExpression);
+  if (parsed.status === "active") {
+    updateSchedule(jobId, parsed.cronExpression);
   } else {
     unscheduleJob(jobId);
   }
@@ -69,13 +72,6 @@ export async function deleteJob(jobId: number) {
   revalidatePath("/");
   revalidatePath("/jobs");
   redirect("/jobs");
-}
-
-export async function triggerScrape(jobId: number) {
-  const result = await runScrape(jobId);
-  revalidatePath(`/jobs/${jobId}`);
-  revalidatePath("/");
-  return result;
 }
 
 export async function triggerScrapeAction(jobId: number) {

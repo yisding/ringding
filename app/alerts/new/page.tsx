@@ -1,23 +1,6 @@
 import { db } from "@/db";
 import { createAlert } from "@/app/_actions/alert-actions";
-
-const ALERT_TYPES = [
-  {
-    value: "cheapest_below",
-    label: "Cheapest ticket below price",
-    unit: "$",
-  },
-  {
-    value: "cheapest_above",
-    label: "Cheapest ticket above price",
-    unit: "$",
-  },
-  {
-    value: "avg_deviation",
-    label: "Average deviates from 30-day trend",
-    unit: "%",
-  },
-];
+import { ALERT_TYPES } from "@/lib/validation";
 
 export default async function NewAlertPage({
   searchParams,

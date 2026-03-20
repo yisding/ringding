@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { alertRules, alertHistory, scrapeJobs } from "@/db/schema";
+import { alertRules, scrapeJobs } from "@/db/schema";
 import { toggleAlert } from "@/app/_actions/alert-actions";
 
 export default async function AlertsPage() {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { scrapeJobs, priceRecords } from "@/db/schema";

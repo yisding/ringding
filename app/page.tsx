@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { eq, gte, sql } from "drizzle-orm";
+import { gte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { scrapeJobs, priceRecords, alertHistory } from "@/db/schema";
+import { priceRecords, alertHistory } from "@/db/schema";
 
 export default async function DashboardPage() {
   const jobs = await db.query.scrapeJobs.findMany();
@@ -20,30 +20,55 @@ export default async function DashboardPage() {
     .from(alertHistory)
     .where(gte(alertHistory.triggeredAt, todayStart));
 
-  // Get latest cheapest price per job
-  const jobsWithPrices = await Promise.all(
-    jobs.map(async (job) => {
-      const latest = await db
-        .select()
-        .from(priceRecords)
-        .where(eq(priceRecords.jobId, job.id))
-        .orderBy(sql`scraped_at desc`)
-        .limit(50);
-
-      const latestTimestamp = latest[0]?.scrapedAt;
-      const latestBatch = latest.filter(
-        (p) => p.scrapedAt?.getTime() === latestTimestamp?.getTime()
-      );
-      const cheapest = latestBatch.length
-        ? Math.min(...latestBatch.map((p) => p.price))
-        : null;
-      const avg = latestBatch.length
-        ? latestBatch.reduce((s, p) => s + p.price, 0) / latestBatch.length
-        : null;
-
-      return { ...job, cheapest, avg, listingCount: latestBatch.length };
+  // Get latest prices per job in a single query: fetch the most recent scraped_at per job,
+  // then fetch all records at that timestamp.
+  const latestTimestamps = await db
+    .select({
+      jobId: priceRecords.jobId,
+      maxScrapedAt: sql<number>`max(scraped_at)`.as("max_scraped_at"),
     })
-  );
+    .from(priceRecords)
+    .groupBy(priceRecords.jobId);
+
+  // Only fetch latest-batch records if there are any jobs with data
+  let latestRecords: { jobId: number; price: number }[] = [];
+  if (latestTimestamps.length > 0) {
+    latestRecords = await db
+      .select({
+        jobId: priceRecords.jobId,
+        price: priceRecords.price,
+      })
+      .from(priceRecords)
+      .where(
+        sql`(${priceRecords.jobId}, scraped_at) in (${sql.raw(
+          latestTimestamps
+            .map((r) => `(${r.jobId}, ${r.maxScrapedAt})`)
+            .join(", ")
+        )})`
+      );
+  }
+
+  // Group by job
+  const recordsByJob = new Map<
+    number,
+    { price: number }[]
+  >();
+  for (const r of latestRecords) {
+    const list = recordsByJob.get(r.jobId) ?? [];
+    list.push({ price: r.price });
+    recordsByJob.set(r.jobId, list);
+  }
+
+  const jobsWithPrices = jobs.map((job) => {
+    const batch = recordsByJob.get(job.id) ?? [];
+    const cheapest = batch.length
+      ? Math.min(...batch.map((p) => p.price))
+      : null;
+    const avg = batch.length
+      ? batch.reduce((s, p) => s + p.price, 0) / batch.length
+      : null;
+    return { ...job, cheapest, avg, listingCount: batch.length };
+  });
 
   return (
     <div>

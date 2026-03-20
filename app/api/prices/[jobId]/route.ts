@@ -2,6 +2,8 @@ import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { priceRecords } from "@/db/schema";
 
+const MAX_LIMIT = 1000;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ jobId: string }> }
@@ -14,7 +16,10 @@ export async function GET(
   }
 
   const url = new URL(request.url);
-  const limit = parseInt(url.searchParams.get("limit") || "100", 10);
+  const limit = Math.min(
+    Math.max(parseInt(url.searchParams.get("limit") || "100", 10) || 100, 1),
+    MAX_LIMIT
+  );
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
 

@@ -7,6 +7,14 @@ function getResend(): Resend | null {
   return _resend;
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function sendAlertEmail(
   to: string,
   message: string,
@@ -19,6 +27,7 @@ export async function sendAlertEmail(
   }
 
   const from = process.env.ALERT_FROM_EMAIL || "alerts@example.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   await resend.emails.send({
     from,
@@ -26,8 +35,8 @@ export async function sendAlertEmail(
     subject: `RingDing Alert: Price alert triggered`,
     html: `
       <h2>Price Alert Triggered</h2>
-      <p>${message}</p>
-      <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/jobs/${jobId}">View job details</a></p>
+      <p>${escapeHtml(message)}</p>
+      <p><a href="${escapeHtml(appUrl)}/jobs/${jobId}">View job details</a></p>
     `,
   });
 }

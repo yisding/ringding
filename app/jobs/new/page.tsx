@@ -1,11 +1,5 @@
 import { createJob } from "@/app/_actions/job-actions";
-
-const FREQUENCY_OPTIONS = [
-  { label: "Every hour", value: "0 * * * *" },
-  { label: "Every 6 hours", value: "0 */6 * * *" },
-  { label: "Every 12 hours", value: "0 */12 * * *" },
-  { label: "Daily", value: "0 9 * * *" },
-];
+import { FREQUENCY_OPTIONS } from "@/lib/validation";
 
 export default function NewJobPage() {
   return (
@@ -18,7 +12,7 @@ export default function NewJobPage() {
             htmlFor="url"
             className="mb-1 block text-sm font-medium"
           >
-            StubHub URL
+            URL
           </label>
           <input
             type="url"

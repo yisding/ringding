@@ -8,12 +8,16 @@ function getBackend(): ScraperBackend {
   return env as ScraperBackend;
 }
 
+let stealthApplied = false;
+
 async function fetchWithPlaywright(url: string): Promise<BrowserResult> {
-  // playwright-extra with stealth plugin + rebrowser-playwright patches
   const { chromium } = await import("playwright-extra");
-  const StealthPlugin = (await import("puppeteer-extra-plugin-stealth"))
-    .default;
-  chromium.use(StealthPlugin());
+  if (!stealthApplied) {
+    const StealthPlugin = (await import("puppeteer-extra-plugin-stealth"))
+      .default;
+    chromium.use(StealthPlugin());
+    stealthApplied = true;
+  }
 
   const browser = await chromium.launch({ headless: true });
   try {

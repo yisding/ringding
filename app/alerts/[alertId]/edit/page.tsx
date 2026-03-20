@@ -3,21 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { alertRules } from "@/db/schema";
 import { updateAlert, deleteAlert } from "@/app/_actions/alert-actions";
-
-const ALERT_TYPES = [
-  {
-    value: "cheapest_below",
-    label: "Cheapest ticket below price",
-  },
-  {
-    value: "cheapest_above",
-    label: "Cheapest ticket above price",
-  },
-  {
-    value: "avg_deviation",
-    label: "Average deviates from 30-day trend",
-  },
-];
+import { ALERT_TYPES } from "@/lib/validation";
 
 export default async function EditAlertPage({
   params,
