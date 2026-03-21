@@ -1,0 +1,1 @@
+ALTER TABLE `scrape_jobs` ADD `last_error` text;

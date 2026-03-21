@@ -74,8 +74,11 @@ export async function deleteJob(jobId: number) {
   redirect("/jobs");
 }
 
-export async function triggerScrapeAction(jobId: number) {
-  await runScrape(jobId);
+export async function triggerScrapeAction(
+  jobId: number
+): Promise<{ success: boolean; error?: string }> {
+  const result = await runScrape(jobId);
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/");
+  return { success: result.success, error: result.error };
 }

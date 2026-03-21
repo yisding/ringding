@@ -8,6 +8,7 @@ export const scrapeJobs = sqliteTable("scrape_jobs", {
   status: text("status", { enum: ["active", "paused", "error"] })
     .notNull()
     .default("active"),
+  lastError: text("last_error"),
   lastScrapedAt: integer("last_scraped_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

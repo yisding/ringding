@@ -3,7 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { scrapeJobs, priceRecords } from "@/db/schema";
-import { triggerScrapeAction } from "@/app/_actions/job-actions";
+import { ScrapeButton } from "./scrape-button";
 
 export default async function JobDetailPage({
   params,
@@ -43,8 +43,6 @@ export default async function JobDetailPage({
     ? latestBatch.reduce((s, p) => s + p.price, 0) / latestBatch.length
     : null;
 
-  const scrapeAction = triggerScrapeAction.bind(null, id);
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -55,14 +53,7 @@ export default async function JobDetailPage({
           <p className="mt-1 text-sm text-gray-500 break-all">{job.url}</p>
         </div>
         <div className="flex gap-2">
-          <form action={scrapeAction}>
-            <button
-              type="submit"
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-            >
-              Scrape Now
-            </button>
-          </form>
+          <ScrapeButton jobId={id} />
           <Link
             href={`/jobs/${id}/edit`}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
@@ -77,6 +68,18 @@ export default async function JobDetailPage({
           </Link>
         </div>
       </div>
+
+      {/* Error banner */}
+      {job.status === "error" && job.lastError && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+          <h3 className="text-sm font-semibold text-red-800 dark:text-red-400">
+            Last Error
+          </h3>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap break-words">
+            {job.lastError}
+          </p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
